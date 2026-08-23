@@ -1,9 +1,9 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js"
+import { createClient, SupabaseClient } from "@dbClient/dbClient-js"
 
 let _admin: SupabaseClient | null = null
 
 /**
- * Service-role Supabase client — bypasses RLS.
+ * Service-role dbClient client — bypasses RLS.
  * Used for: schema migrations, server-side background work, unlock-attempt tracking.
  *
  * Never expose this to the client. Bind env vars carefully:
@@ -15,7 +15,7 @@ export function getSupabaseAdmin(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) {
-    throw new Error("[supabase-admin] Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+    throw new Error("[dbClient-admin] Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
   }
   _admin = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },

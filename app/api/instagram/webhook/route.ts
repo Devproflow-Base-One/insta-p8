@@ -2,8 +2,8 @@
 
 import crypto from "crypto"
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
-import { ensureSchema } from "@/lib/supabase-migrate"
+import { getDatabaseServerClient } from "@/lib/database-server"
+import { ensureSchema } from "@/lib/dbClient-migrate"
 import {
   sendTextDM,
   sendCardDM,
@@ -174,7 +174,7 @@ async function verifyFollowStatus(igScopedId: string, pageAccessToken: string): 
   }
 }
 
-// Unlock-attempt counter is in lib/unlock-tracking.ts -- uses Supabase
+// Unlock-attempt counter is in lib/unlock-tracking.ts -- uses dbClient
 // unlock_attempts table so the 3-attempt cap works across Vercel instances.
 
 export async function POST(request: NextRequest) {
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
     if (!body.entry) return NextResponse.json({ ok: true })
     // Ensure schema is up-to-date on every cold start (idempotent, no-op if all tables exist)
     ensureSchema().catch((e) => console.warn("[webhook] ensureSchema failed:", e?.message))
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
     for (const entry of body.entry) {
       // Skip pure system events (echo / read / delivery)
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
       const webhookId = entry.id
 
       // ---------- User resolution: direct, payload fallback, token verify ----------
-      let { data: user } = await supabase
+      let { data: user } = await dbClient
         .from("users")
         .select("*")
         .or(`business_account_id.eq.${webhookId},page_id.eq.${webhookId}`)
@@ -235,13 +235,13 @@ export async function POST(request: NextRequest) {
         }
         for (const candidateId of candidateIds) {
           if (candidateId === webhookId) continue
-          const { data: fallbackUser } = await supabase
+          const { data: fallbackUser } = await dbClient
             .from("users")
             .select("*")
             .or(`business_account_id.eq.${candidateId},page_id.eq.${candidateId}`)
             .single()
           if (fallbackUser) {
-            await supabase.from("users").update({ page_id: webhookId }).eq("id", fallbackUser.id)
+            await dbClient.from("users").update({ page_id: webhookId }).eq("id", fallbackUser.id)
             user = fallbackUser
             break
           }
@@ -249,12 +249,12 @@ export async function POST(request: NextRequest) {
       }
 
       if (!user) {
-        const { data: allUsers } = await supabase.from("users").select("*")
+        const { data: allUsers } = await dbClient.from("users").select("*")
         if (allUsers) {
           for (const candidate of allUsers) {
             if (!candidate.access_token) continue
             if (await verifyIdOwnership(candidate.access_token, webhookId)) {
-              await supabase.from("users").update({ page_id: webhookId }).eq("id", candidate.id)
+              await dbClient.from("users").update({ page_id: webhookId }).eq("id", candidate.id)
               user = candidate
               break
             }
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const { data: automations } = await supabase
+      const { data: automations } = await dbClient
         .from("automations")
         .select("*")
         .eq("user_id", user.id)
@@ -530,7 +530,7 @@ export async function POST(request: NextRequest) {
           // ---------- Persist conversation + incoming message ----------
           let conv = null
           try {
-            const { data: existing } = await supabase
+            const { data: existing } = await dbClient
               .from("conversations")
               .select("id")
               .eq("user_id", user.id)
@@ -542,7 +542,7 @@ export async function POST(request: NextRequest) {
               const profile = await fetchProfile(user.access_token, senderId)
               if (profile?.username) realUsername = profile.username
 
-              const { data: newConv } = await supabase
+              const { data: newConv } = await dbClient
                 .from("conversations")
                 .insert({
                   user_id: user.id,
@@ -555,14 +555,14 @@ export async function POST(request: NextRequest) {
               conv = newConv
             } else {
               conv = existing
-              await supabase
+              await dbClient
                 .from("conversations")
                 .update({ last_message_at: new Date().toISOString() })
                 .eq("id", existing.id)
             }
 
             if (conv) {
-              await supabase.from("messages").insert({
+              await dbClient.from("messages").insert({
                 id: event.message?.mid || `mid_${Date.now()}_${Math.random()}`,
                 conversation_id: conv.id,
                 user_id: user.id,
@@ -588,7 +588,7 @@ export async function POST(request: NextRequest) {
                         match = automations.find((a) => a.id === ruleId)
                       } else if (triggerValue.startsWith("ICE_BREAKER_")) {
                         const iceBreakerId = triggerValue.replace("ICE_BREAKER_", "")
-                        const { data: ib } = await supabase
+                        const { data: ib } = await dbClient
                           .from("ice_breakers")
                           .select("*")
                           .eq("id", iceBreakerId)
@@ -624,7 +624,7 @@ export async function POST(request: NextRequest) {
                           const result = await sendTextDM(user.access_token, { id: senderId }, aiReply)
                           if (result?.ok && conv) {
                             try {
-                              await supabase.from("messages").insert({
+                              await dbClient.from("messages").insert({
                                 id: `mid_ai_${Date.now()}_${Math.random()}`,
                                 conversation_id: conv.id,
                                 user_id: user.id,
@@ -668,7 +668,7 @@ export async function POST(request: NextRequest) {
                           const result = await sendAutomationResponse(user.access_token, { id: senderId }, content)
                           if (result?.ok && conv) {
                             try {
-                              await supabase.from("messages").insert({
+                              await dbClient.from("messages").insert({
                                 id: `mid_reply_${Date.now()}_${Math.random()}`,
                                 conversation_id: conv.id,
                                 user_id: user.id,
@@ -687,7 +687,7 @@ export async function POST(request: NextRequest) {
                           const result = await sendCardDM(user.access_token, { id: senderId }, buildFollowGateCard({ username: user.username, ruleId: match.id, title: "❌ Not Following Yet!", subtitle: `We couldn't verify your follow. Please follow @${user.username} and click the button again.` }))
                           if (result?.ok && conv) {
                             try {
-                              await supabase.from("messages").insert({
+                              await dbClient.from("messages").insert({
                                 id: `mid_reply_${Date.now()}_${Math.random()}`,
                                 conversation_id: conv.id,
                                 user_id: user.id,
@@ -713,7 +713,7 @@ export async function POST(request: NextRequest) {
                                                     )
                                                     if (result?.ok && conv) {
                                                       try {
-                                                        await supabase.from("messages").insert({
+                                                        await dbClient.from("messages").insert({
                                                           id: `mid_reply_${Date.now()}_${Math.random()}`,
                                                           conversation_id: conv.id,
                                                           user_id: user.id,
@@ -731,7 +731,7 @@ export async function POST(request: NextRequest) {
                                                     const result = await sendCardDM(user.access_token, { id: senderId }, buildFollowGateCard({ username: user.username, ruleId: match.id, subtitle: `Please follow @${user.username} to see this!` }))
                                                     if (result?.ok && conv) {
                                                       try {
-                                                        await supabase.from("messages").insert({
+                                                        await dbClient.from("messages").insert({
                                                           id: `mid_reply_${Date.now()}_${Math.random()}`,
                                                           conversation_id: conv.id,
                                                           user_id: user.id,
@@ -756,7 +756,7 @@ export async function POST(request: NextRequest) {
                           const result = await sendAutomationResponse(user.access_token, { id: senderId }, content)
                           if (result?.ok && conv) {
                             try {
-                              await supabase.from("messages").insert({
+                              await dbClient.from("messages").insert({
                                 id: `mid_reply_${Date.now()}_${Math.random()}`,
                                 conversation_id: conv.id,
                                 user_id: user.id,
@@ -775,7 +775,7 @@ export async function POST(request: NextRequest) {
                           const result = await sendCardDM(user.access_token, { id: senderId }, buildFollowGateCard({ username: user.username, ruleId: match.id, subtitle: `Please follow @${user.username} to see this!` }))
                           if (result?.ok && conv) {
                             try {
-                              await supabase.from("messages").insert({
+                              await dbClient.from("messages").insert({
                                 id: `mid_reply_${Date.now()}_${Math.random()}`,
                                 conversation_id: conv.id,
                                 user_id: user.id,
@@ -798,7 +798,7 @@ export async function POST(request: NextRequest) {
                             const result = await sendCardDM(user.access_token, { id: senderId }, buildFollowGateCard({ username: user.username, ruleId: match.id, title: "❌ Verification Failed", subtitle: `We can't verify your follow status. Please follow @${user.username} and try again.` }))
                             if (result?.ok && conv) {
                               try {
-                                await supabase.from("messages").insert({
+                                await dbClient.from("messages").insert({
                                   id: `mid_reply_${Date.now()}_${Math.random()}`,
                                   conversation_id: conv.id,
                                   user_id: user.id,
@@ -817,7 +817,7 @@ export async function POST(request: NextRequest) {
                             const result = await sendAutomationResponse(user.access_token, { id: senderId }, content)
                             if (result?.ok && conv) {
                               try {
-                                await supabase.from("messages").insert({
+                                await dbClient.from("messages").insert({
                                   id: `mid_reply_${Date.now()}_${Math.random()}`,
                                   conversation_id: conv.id,
                                   user_id: user.id,
@@ -838,7 +838,7 @@ export async function POST(request: NextRequest) {
                       const result = await sendAutomationResponse(user.access_token, { id: senderId }, content)
                       if (result?.ok && conv) {
                         try {
-                          await supabase.from("messages").insert({
+                          await dbClient.from("messages").insert({
                             id: `mid_reply_${Date.now()}_${Math.random()}`,
                             conversation_id: conv.id,
                             user_id: user.id,

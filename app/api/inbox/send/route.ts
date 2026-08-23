@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { getDatabaseServerClient } from "@/lib/database-server"
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,10 +10,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
         }
 
-        const supabase = await getSupabaseServerClient()
+        const dbClient = await getDatabaseServerClient()
 
         // 1. Get User Access Token
-        const { data: user, error: userError } = await supabase
+        const { data: user, error: userError } = await dbClient
             .from("users")
             .select("access_token, username, business_account_id")
             .eq("id", userId)
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
         // 4. Log to Database (Outbound Message)
         // Find Conversation ID first
-        let { data: conv } = await supabase
+        let { data: conv } = await dbClient
             .from("conversations")
             .select("id")
             .eq("user_id", userId)
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         // without knowing username. Assuming it exists for now as this is usually a reply flow.
 
         if (conv) {
-            await supabase.from("messages").insert({
+            await dbClient.from("messages").insert({
                 id: `mid_out_${Date.now()}_${Math.random()}`,
                 conversation_id: conv.id,
                 user_id: userId,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
             })
 
             // Update conversation timestamp
-            await supabase
+            await dbClient
                 .from("conversations")
                 .update({ last_message_at: new Date().toISOString() })
                 .eq("id", conv.id)

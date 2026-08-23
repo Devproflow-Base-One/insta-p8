@@ -1,16 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { getDatabaseServerClient } from "@/lib/database-server"
 
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get("userId")
     if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 })
 
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
     // STABLE FIX: Fetch rules by the Login ID (userId) directly.
     // We stop caring about the shifting Business ID here.
-    const { data, error } = await supabase
+    const { data, error } = await dbClient
       .from("automations")
       .select("*")
       .eq("user_id", userId)
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid trigger source" }, { status: 400 })
     }
 
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
     // STABLE FIX: Always save to the Login ID
     const finalTriggerValue =
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         ? `PAYLOAD_${Date.now()}_${Math.random().toString(36).substring(7)}`
         : trigger_value.toLowerCase()
 
-    const { data, error } = await supabase
+    const { data, error } = await dbClient
       .from("automations")
       .insert({
         user_id: userId,
@@ -73,8 +73,8 @@ export async function DELETE(request: NextRequest) {
   try {
     const id = request.nextUrl.searchParams.get("id")
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
-    const supabase = await getSupabaseServerClient()
-    const { error } = await supabase.from("automations").delete().eq("id", id)
+    const dbClient = await getDatabaseServerClient()
+    const { error } = await dbClient.from("automations").delete().eq("id", id)
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Invalid trigger source" }, { status: 400 })
     }
 
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
     const updateData: any = {
       name,
@@ -111,7 +111,7 @@ export async function PUT(request: NextRequest) {
       updateData.trigger_source = trigger_source
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await dbClient
       .from("automations")
       .update(updateData)
       .eq("id", id)
@@ -131,10 +131,10 @@ export async function PATCH(request: NextRequest) {
     const { id, is_active, action } = await request.json()
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
 
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
     if (action === "duplicate") {
-      const { data: original, error: fetchError } = await supabase
+      const { data: original, error: fetchError } = await dbClient
         .from("automations")
         .select("*")
         .eq("id", id)
@@ -142,7 +142,7 @@ export async function PATCH(request: NextRequest) {
       if (fetchError || !original) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
       const { id: _id, created_at, updated_at, ...rest } = original
-      const { data, error } = await supabase
+      const { data, error } = await dbClient
         .from("automations")
         .insert({ ...rest, name: `${original.name} (copy)`, is_active: false })
         .select()
@@ -155,7 +155,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Missing is_active" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await dbClient
       .from("automations")
       .update({ is_active })
       .eq("id", id)

@@ -1,15 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { getDatabaseServerClient } from "@/lib/database-server"
 
 export async function GET(request: NextRequest) {
     try {
         const conversationId = request.nextUrl.searchParams.get("conversationId")
         if (!conversationId) return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
 
-        const supabase = await getSupabaseServerClient()
+        const dbClient = await getDatabaseServerClient()
 
         // Fetch messages for this conversation
-        const { data: messages, error } = await supabase
+        const { data: messages, error } = await dbClient
             .from("messages")
             .select("*")
             .eq("conversation_id", conversationId)

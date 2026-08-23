@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         <h2 className="text-xl font-semibold mt-6">Data Storage</h2>
         <p>
           Your Instagram access tokens and profile data are stored securely in
-          our database (Supabase). You can disconnect your account at any time,
+          our database (dbClient). You can disconnect your account at any time,
           which will remove the stored tokens.
         </p>
 

@@ -1,6 +1,6 @@
 import * as fs from "fs"
 import * as path from "path"
-import { getSupabaseAdmin } from "./supabase-admin"
+import { getSupabaseAdmin } from "./dbClient-admin"
 
 let _migrated = false
 let _running: Promise<void> | null = null
@@ -8,13 +8,13 @@ let _running: Promise<void> | null = null
 /**
  * Run schema.sql's safe DDL against the live database. Idempotent.
  *
- * Auto-migration scope (lib/supabase-migrate.ts handles on every cold start):
+ * Auto-migration scope (lib/dbClient-migrate.ts handles on every cold start):
  *   - CREATE TABLE IF NOT EXISTS
  *   - CREATE INDEX IF NOT EXISTS
  *   - CREATE EXTENSION IF NOT EXISTS
  *   - CREATE OR REPLACE FUNCTION (plpgsql RPCs, including $$ ... $$ bodies)
  *
- * Manual one-time setup (apply via Supabase SQL editor -- anon role required):
+ * Manual one-time setup (apply via dbClient SQL editor -- anon role required):
  *   - CREATE POLICY (RLS)
  *   - ALTER TABLE ... ENABLE ROW LEVEL SECURITY
  */
@@ -47,21 +47,21 @@ export async function ensureSchema(): Promise<void> {
     console.log(`[migrate] Applying schema.sql (idempotent CREATE TABLE / INDEX / EXTENSION / FUNCTION)...`)
 
     const sql = fs.readFileSync(schemaPath, "utf8")
-    const supabase = getSupabaseAdmin()
+    const dbClient = getSupabaseAdmin()
     const statements = parseSafeStatements(sql)
     console.log(`[migrate] Extracted ${statements.length} safe statements...`)
 
     for (const stmt of statements) {
       try {
-        const { error } = await supabase.rpc("exec_sql", { sql: stmt })
+        const { error } = await dbClient.rpc("exec_sql", { sql: stmt })
         if (error) {
           console.warn(`[migrate] exec_sql RPC skipped (${error.message})`)
-          console.warn(`[migrate] Run schema.sql in the Supabase SQL editor if tables/RPCs are missing.`)
+          console.warn(`[migrate] Run schema.sql in the dbClient SQL editor if tables/RPCs are missing.`)
           break
         }
       } catch (e) {
         console.warn(`[migrate] exec_sql RPC unavailable:`, e instanceof Error ? e.message : e)
-        console.warn(`[migrate] Run schema.sql in the Supabase SQL editor if tables/RPCs are missing.`)
+        console.warn(`[migrate] Run schema.sql in the dbClient SQL editor if tables/RPCs are missing.`)
         break
       }
     }

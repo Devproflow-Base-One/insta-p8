@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { getDatabaseServerClient } from "@/lib/database-server"
 
 /**
  * POST /api/instagram/test-login
@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
     const TEST_USER_ID = "9999999999"
     const TEST_USERNAME = "test_creator"
 
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await dbClient
       .from("users")
       .upsert(
         {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       )
 
     if (upsertError) {
-      console.error("[test-login] Supabase upsert error:", upsertError)
+      console.error("[test-login] dbClient upsert error:", upsertError)
       return NextResponse.json({ error: upsertError.message }, { status: 500 })
     }
 

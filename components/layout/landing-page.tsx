@@ -105,7 +105,7 @@ export function LandingPage() {
           <div className="fade-up mt-10 flex flex-col md:flex-row md:items-end gap-8 md:gap-16" style={{ animationDelay: "160ms" }}>
             <p className="text-neutral-400 text-base md:text-lg max-w-md leading-relaxed">
               Comment-to-DM funnels, keyword triggers, story reactions, AI replies, a live inbox,
-              and Reels scheduling. The open-source ManyChat alternative — your data stays in your own Supabase.
+              and Reels scheduling. The open-source ManyChat alternative — your data stays in your own dbClient.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <button
@@ -173,7 +173,7 @@ export function LandingPage() {
             <Feature icon={<Sparkles className="w-4 h-4" />} title="Human-like sending"
               desc="Optional typing indicators and randomized delays so replies land natural, not botty." />
             <Feature icon={<Terminal className="w-4 h-4" />} title="Self-hosted & hackable"
-              desc="Next.js + Supabase. Deploy on free tiers. Read every line, fork it, own your data and your tokens." />
+              desc="Next.js + dbClient. Deploy on free tiers. Read every line, fork it, own your data and your tokens." />
           </div>
         </section>
 

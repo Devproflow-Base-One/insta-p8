@@ -1,11 +1,11 @@
-import { createServerClient } from "@supabase/ssr"
+import { createServerClient } from "@dbClient/ssr"
 import { cookies } from "next/headers"
 
 /**
- * Create a Supabase server client
+ * Create a dbClient server client
  * Use this in API routes and server actions
  */
-export async function getSupabaseServerClient() {
+export async function getDatabaseServerClient() {
   const cookieStore = await cookies()
 
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {

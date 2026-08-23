@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "./supabase-admin"
+import { getSupabaseAdmin } from "./dbClient-admin"
 
 /**
  * Persistent unlock-attempt counter, shared across serverless instances.

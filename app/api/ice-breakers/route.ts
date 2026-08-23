@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { getDatabaseServerClient } from "@/lib/database-server"
 
 export async function GET(request: NextRequest) {
     try {
@@ -8,8 +8,8 @@ export async function GET(request: NextRequest) {
 
         if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 })
 
-        const supabase = await getSupabaseServerClient()
-        const { data, error } = await supabase
+        const dbClient = await getDatabaseServerClient()
+        const { data, error } = await dbClient
             .from("ice_breakers")
             .select("*")
             .eq("user_id", userId)
@@ -33,18 +33,18 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
         }
 
-        const supabase = await getSupabaseServerClient()
+        const dbClient = await getDatabaseServerClient()
 
         // 1. Update Database (Replace all for simplicity or Upsert)
         // Strategy: Delete all for user and re-insert. Simple and effective for limited list (max 4).
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await dbClient
             .from("ice_breakers")
             .delete()
             .eq("user_id", userId)
 
         if (deleteError) throw deleteError
 
-        const { data: inserted, error: insertError } = await supabase
+        const { data: inserted, error: insertError } = await dbClient
             .from("ice_breakers")
             .insert(iceBreakers.map((ib: any) => ({
                 user_id: userId,
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         if (insertError) throw insertError
 
         // 2. Sync to Instagram
-        const { data: user } = await supabase.from("users").select("access_token, page_id").eq("id", userId).single()
+        const { data: user } = await dbClient.from("users").select("access_token, page_id").eq("id", userId).single()
 
         if (user && user.access_token && user.page_id) {
             // Construct IG Payload

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { getDatabaseServerClient } from "@/lib/database-server"
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Save/Update User
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
     const updates: any = {
       username,
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`[v0] 💾 Saving user: ${username} | id=${loginUserId} | biz_id=${businessAccountId}`)
 
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await dbClient
       .from("users")
       .upsert({ id: loginUserId, ...updates }, { onConflict: "id" })
 

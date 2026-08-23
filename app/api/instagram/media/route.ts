@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { getDatabaseServerClient } from "@/lib/database-server"
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,10 +8,10 @@ export async function GET(request: NextRequest) {
 
     if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 })
 
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
     // 1. Get Access Token
-    const { data: user } = await supabase
+    const { data: user } = await dbClient
       .from("users")
       .select("access_token") // Business ID ki zaroorat nahi hai ab
       .eq("id", userId)

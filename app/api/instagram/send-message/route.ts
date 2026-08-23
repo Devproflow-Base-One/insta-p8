@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { getDatabaseServerClient } from "@/lib/database-server"
 
 /**
  * POST /api/instagram/send-message
@@ -20,10 +20,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields: user_id, recipient_id, message" }, { status: 400 })
     }
 
-    const supabase = await getSupabaseServerClient()
+    const dbClient = await getDatabaseServerClient()
 
     // Get user's access token
-    const { data: user, error: userError } = await supabase
+    const { data: user, error: userError } = await dbClient
       .from("users")
       .select("access_token, username")
       .eq("id", user_id)
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     console.log("[v0] Message sent successfully:", data.message_id)
 
     // Store the sent message in database
-    const { data: conversation } = await supabase
+    const { data: conversation } = await dbClient
       .from("conversations")
       .select("id")
       .eq("user_id", user_id)
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (conversation) {
-      await supabase.from("messages").insert({
+      await dbClient.from("messages").insert({
         id: data.message_id,
         conversation_id: conversation.id,
         user_id,
