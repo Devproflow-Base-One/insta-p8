@@ -1,3 +1,7 @@
+# DEPRECATED 2026-09-15 (L1): this script exercised Supabase Storage directly.
+# The Supabase project is decommissioned — reel uploads now go through the
+# app's /api/upload/reel route backed by filesystem storage via @lumina/db-shim
+# (LUMINA_STORAGE_UPLOAD_DIR). Kept for history; do not run.
 import os
 import random
 import requests

@@ -1,22 +1,23 @@
 import * as fs from "fs"
 import * as path from "path"
-import { getSupabaseAdmin } from "./dbClient-admin"
+import { getSupabaseAdmin } from "./supabase-admin"
 
 let _migrated = false
 let _running: Promise<void> | null = null
 
 /**
  * Run schema.sql's safe DDL against the live database. Idempotent.
+ * L1 migration (2026-09-15): executes directly on self-hosted PostgreSQL
+ * via the shim's raw query() — the PostgREST exec_sql RPC no longer exists.
  *
- * Auto-migration scope (lib/dbClient-migrate.ts handles on every cold start):
+ * Auto-migration scope (handles on every cold start):
  *   - CREATE TABLE IF NOT EXISTS
  *   - CREATE INDEX IF NOT EXISTS
  *   - CREATE EXTENSION IF NOT EXISTS
  *   - CREATE OR REPLACE FUNCTION (plpgsql RPCs, including $$ ... $$ bodies)
  *
- * Manual one-time setup (apply via dbClient SQL editor -- anon role required):
- *   - CREATE POLICY (RLS)
- *   - ALTER TABLE ... ENABLE ROW LEVEL SECURITY
+ * CREATE POLICY / ENABLE ROW LEVEL SECURITY statements are skipped: they
+ * target PostgREST's `anon` role which does not exist on self-hosted pg.
  */
 const EXPECTED_TABLES = [
   "users",
@@ -53,15 +54,13 @@ export async function ensureSchema(): Promise<void> {
 
     for (const stmt of statements) {
       try {
-        const { error } = await dbClient.rpc("exec_sql", { sql: stmt })
+        const { error } = await dbClient.query(stmt)
         if (error) {
-          console.warn(`[migrate] exec_sql RPC skipped (${error.message})`)
-          console.warn(`[migrate] Run schema.sql in the dbClient SQL editor if tables/RPCs are missing.`)
+          console.warn(`[migrate] statement skipped (${error.message ?? error})`)
           break
         }
       } catch (e) {
-        console.warn(`[migrate] exec_sql RPC unavailable:`, e instanceof Error ? e.message : e)
-        console.warn(`[migrate] Run schema.sql in the dbClient SQL editor if tables/RPCs are missing.`)
+        console.warn(`[migrate] statement failed:`, e instanceof Error ? e.message : e)
         break
       }
     }

@@ -3,7 +3,7 @@
 import crypto from "crypto"
 import { type NextRequest, NextResponse } from "next/server"
 import { getDatabaseServerClient } from "@/lib/database-server"
-import { ensureSchema } from "@/lib/dbClient-migrate"
+import { ensureSchema } from "@/lib/supabase-migrate"
 import {
   sendTextDM,
   sendCardDM,
