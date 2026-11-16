@@ -1,2 +1,6 @@
+packages:
+  - .
+  - ../lumina-db-shim
+
 allowBuilds:
   sharp: true

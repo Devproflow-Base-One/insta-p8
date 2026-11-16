@@ -14,13 +14,13 @@ Get your self-hosted setup up and running in under 18 minutes!
 * **AI Auto-Replies:** Built-in Groq/OpenAI integration for automated natural conversation fallbacks.
 * **Step-by-Step Automation Wizard:** Clean, intuitive UI step-form to easily configure automation logic.
 * **Dev Login Bypass:** Local development bypass login to test dashboard features instantly without setting up Meta OAuth.
-* **Supabase Integration:** DB schema configuration with unified database tables.
+* **PostgreSQL Integration:** DB schema configuration with unified database tables.
 
 ---
 
 ## 🚀 Quick Deployment Guide
 1. **Fork** this repository.
-2. Create a project on **Supabase** and run `schema.sql` inside the SQL Editor.
+2. Provision a PostgreSQL database and run `schema.sql` with psql.
 3. Create a developer app at **developers.facebook.com** and add the *Instagram Graph API* product.
 4. Deploy the fork to **Vercel** and input the environment variables from `.env.example`.
 5. Connect your account and launch!

@@ -1,14 +1,14 @@
--- Supabase Database Schema — Insta-P8
+-- PostgreSQL Database Schema — Insta-P8
 -- This file is the canonical source of truth for the database structure.
--- Run it directly in the Supabase SQL editor, or let the migration runner
+-- Run it directly with psql, or let the migration runner
 -- (`lib/supabase-migrate.ts`) sync it automatically on deploy.
 --
--- Auto-migration scope (lib/supabase-migrate.ts handles on every cold start):
+-- Auto-migration scope (lib/db-migrate.ts handles on every cold start):
 --   * CREATE TABLE IF NOT EXISTS
 --   * CREATE INDEX IF NOT EXISTS
 --   * CREATE EXTENSION IF NOT EXISTS
 --
--- Manual one-time setup (apply via Supabase SQL editor -- anon role required):
+-- Manual one-time setup (apply via psql as the DB owner role):
 --   * CREATE POLICY (RLS)
 --   * ALTER TABLE ... ENABLE ROW LEVEL SECURITY
 --   * CREATE OR REPLACE FUNCTION (RPCs)
@@ -248,7 +248,7 @@ USING (bucket_id = 'reels');
 -- SECURITY: Row Level Security (RLS) for public schema tables
 --
 -- Service-role key (server-side) bypasses RLS, so this only restricts the
--- anon role. The frontend uses the anon key via Supabase Auth to read its
+-- anon role. The frontend reads its
 -- own data after sign-in. The policies below enforce per-user ownership
 -- for every table that has user_id.
 --
@@ -422,7 +422,7 @@ $$;
 
 -- =========================================================================
 -- Periodic cleanup of stale unlock_attempts (older than 24h).
--- Set up via Supabase pg_cron (Dashboard -> Database -> Extensions -> pg_cron), then:
+-- Set up via pg_cron (CREATE EXTENSION pg_cron), then:
 --   SELECT cron.schedule('purge-unlock-attempts', '0 * * * *',
 --     $$DELETE FROM public.unlock_attempts WHERE updated_at < NOW() - INTERVAL '24 hours'$$);
 -- Or run manually in the SQL editor:

@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "./supabase-admin"
+import { getDbAdmin } from "./db-admin"
 
 /**
  * Persistent unlock-attempt counter, shared across serverless instances.
@@ -19,7 +19,7 @@ import { getSupabaseAdmin } from "./supabase-admin"
  */
 
 const UNLOCK_TTL_MS = 24 * 60 * 60 * 1000
-const supabaseLazy = () => getSupabaseAdmin()
+const dbLazy = () => getDbAdmin()
 
 export function unlockKey(senderId: string, ruleId: string): string {
   return `${senderId}::${ruleId}`
@@ -27,7 +27,7 @@ export function unlockKey(senderId: string, ruleId: string): string {
 
 async function deleteAttempt(key: string): Promise<void> {
   try {
-    await supabaseLazy().from("unlock_attempts").delete().eq("key", key)
+    await dbLazy().from("unlock_attempts").delete().eq("key", key)
   } catch {
     // Swallow
   }
@@ -43,7 +43,7 @@ async function deleteAttempt(key: string): Promise<void> {
  */
 export async function bumpUnlockAttempt(key: string): Promise<number> {
   try {
-    const { data, error } = await supabaseLazy().rpc("bump_unlock_attempt", {
+    const { data, error } = await dbLazy().rpc("bump_unlock_attempt", {
       p_key: key,
     } as any)
     if (error) {

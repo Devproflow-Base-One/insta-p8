@@ -2,7 +2,7 @@
   <img src="https://img.shields.io/github/stars/ayuuxh2/insta-p8?style=for-the-badge&color=facc15" alt="GitHub stars" />
   <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/Supabase-Postgres-3ECF8E?style=for-the-badge&logo=supabase" alt="Supabase" />
+  <img src="https://img.shields.io/badge/PostgreSQL-self--hosted-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Instagram-Automation-E4405F?style=for-the-badge&logo=instagram" alt="Instagram automation" />
   <a href="https://www.producthunt.com/products/instaauto?launch=instaauto"><img src="https://img.shields.io/badge/Featured%20on-Product%20Hunt-DA552F?style=for-the-badge&logo=producthunt&logoColor=white" alt="Product Hunt" /></a>
   <a href="https://discord.gg/7J9E7bNvX"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" /></a>
@@ -18,7 +18,7 @@
 <p align="center">
   A self-hosted, AI-ready, developer-friendly alternative to paid Instagram automation tools like ManyChat, Chatfuel, and SendPulse.
   <br />
-  No monthly SaaS fees. No vendor lock-in. Your data stays in your Supabase.
+  No monthly SaaS fees. No vendor lock-in. Your data stays in your PostgreSQL.
 </p>
 
 <p align="center">
@@ -88,7 +88,7 @@ If you do not want to deploy anything yourself, you can request access to the ho
 
 ### Option 2: Self-host it
 
-If you are a developer or agency, self-host InstaAuto on your own Vercel + Supabase account.
+If you are a developer or agency, self-host InstaAuto on your own Vercel + PostgreSQL stack.
 
 - **Best for:** developers, agencies, privacy-focused teams, power users
 - **You control:** database, tokens, deployment, AI gateway, webhook URL
@@ -125,7 +125,7 @@ ManyChat is great, but it is closed-source and paid. InstaAuto is for people who
 | Custom API routes | Limited | ✅ |
 | AI-native replies | Paid/add-on style | ✅ |
 | Developer extensibility | Limited | ✅ |
-| Supabase/Postgres backend | ❌ | ✅ |
+| PostgreSQL backend | ❌ | ✅ |
 | Vercel deployable | ❌ | ✅ |
 | Full source code access | ❌ | ✅ |
 
@@ -209,8 +209,8 @@ ManyChat is great, but it is closed-source and paid. InstaAuto is for people who
 - **Frontend:** React 19, TypeScript
 - **Styling:** Tailwind CSS, shadcn/ui-style components
 - **Icons:** Lucide React
-- **Database:** Supabase Postgres
-- **Storage:** Supabase Storage
+- **Database:** PostgreSQL (self-hosted)
+- **Storage:** MinIO / local storage
 - **Deployment:** Vercel
 - **Analytics:** Vercel Analytics
 - **Instagram API:** Instagram API with Instagram Login, Graph API v24.0
@@ -229,7 +229,7 @@ Next.js API Routes
      ↓
 Automation Matcher
      ↓
-Supabase Database
+PostgreSQL Database
      ↓
 Instagram Graph API Reply
 ```
@@ -246,9 +246,9 @@ app/api/inbox                    Conversations, messages, manual send
 app/api/groq                     AI auto-reply settings + chat proxy
 components/dashboard             Dashboard and automations UI
 components/inbox                 Live inbox UI
-lib/supabase-server.ts           Supabase server client (RLS-aware)
-lib/supabase-admin.ts            Service-role client (bypasses RLS)
-lib/supabase-migrate.ts          Runtime migration runner
+lib/database-server.ts         PostgreSQL server client (RLS-aware)
+lib/db-admin.ts                 Admin client (bypasses RLS)
+lib/db-migrate.ts               Runtime migration runner
 lib/unlock-tracking.ts           3-attempt gate-cap counter (RPC-backed)
 lib/instagram-api.ts             sendCardDM, sendTextDM, buildFollowGateCard, etc.
 schema.sql                       Canonical database schema (run in SQL editor)

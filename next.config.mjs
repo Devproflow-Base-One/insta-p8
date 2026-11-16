@@ -6,7 +6,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // schema.sql is read at runtime by lib/supabase-migrate.ts. Without this
+  // schema.sql is read at runtime by lib/db-migrate.ts. Without this
   // entry, the serverless bundle for the Vercel function that imports
   // ensureSchema() will not include schema.sql, and the migration runner
   // will log "schema.sql not found" on every cold start.

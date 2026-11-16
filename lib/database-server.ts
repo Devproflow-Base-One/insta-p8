@@ -8,8 +8,8 @@ import { createClient } from "@lumina/db-shim"
  * self-hosted PostgreSQL via @lumina/db-shim (PostgREST-compatible surface
  * over `pg`), pointed at DATABASE_URL (central-postgres-vps1).
  *
- * The former @supabase/ssr cookie client is gone: nothing in this app calls
- * `.auth.*` (Supabase Auth never had users here) — cookies were vestigial.
+ * The former PostgREST cookie client is gone: nothing in this app calls
+ * `.auth.*` (no hosted auth here) — cookies were vestigial.
  * See docs/05-audit/L1-supabase-residual-audit-2026-09-15.md.
  */
 export async function getDatabaseServerClient() {
